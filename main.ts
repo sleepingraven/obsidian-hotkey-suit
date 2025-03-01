@@ -15,7 +15,7 @@ import {
 import {
 	CommandNode,
 	instantiateRootCommandNode,
-	CommandMetaDelegate,
+	CommandMetaDelegateOrImplementor,
 } from "src/common/CommandTable";
 
 export default class HotkeySuitPlugin extends Plugin {
@@ -35,13 +35,14 @@ export default class HotkeySuitPlugin extends Plugin {
 	initCommandNodes(root: CommandNode) {
 		const doInitCommandNodes = (p: CommandNode) => {
 			p.commands?.forEach((cm) => {
-				const cmd = cm as CommandMetaDelegate;
+				const cmd = cm as CommandMetaDelegateOrImplementor;
 				if (cmd.id && cmd._hks) {
-					const command = CommandMetaDelegate.newCommandInstance(
-						cmd,
-						this.app,
-						() => this.enabledIdToHotkeys.get(cmd.id)?.slice()
-					);
+					const command =
+						CommandMetaDelegateOrImplementor.newCommandInstance(
+							cmd,
+							this.app,
+							() => this.enabledIdToHotkeys.get(cmd.id)?.slice()
+						);
 					if (command) {
 						this.addCommand(command);
 					}

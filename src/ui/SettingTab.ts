@@ -16,7 +16,7 @@ import {
 } from "obsidian";
 import HotkeySuitPlugin from "main";
 import {
-	CommandMetaDelegate,
+	CommandMetaDelegateOrImplementor,
 	CommandNode,
 	CommandMeta,
 } from "src/common/CommandTable";
@@ -88,7 +88,7 @@ export class SettingTab extends PluginSettingTab {
 		settingSupplier: () => Setting,
 		toggleGroup: ToggleGroup
 	) {
-		const cmd = cm as CommandMetaDelegate;
+		const cmd = cm as CommandMetaDelegateOrImplementor;
 		if (cmd.id && cmd._hks) {
 			cmd._hks.forEach((k, idx) => {
 				const setting = settingSupplier();
@@ -108,7 +108,7 @@ export class SettingTab extends PluginSettingTab {
 						HotkeysUtil.sameHotkey(hk, k)
 					);
 					toggle.setValue(toggleValue);
-					toggle.setDisabled(!cmd._hks).onChange(async (value) => {
+					toggle.onChange(async (value) => {
 						const { enabledIdToHotkeys } = this.plugin;
 						const hotkeys = enabledIdToHotkeys.get(cmd.id);
 						if (value) {
@@ -133,11 +133,12 @@ export class SettingTab extends PluginSettingTab {
 							}
 						}
 
-						const command = CommandMetaDelegate.newCommandInstance(
-							cmd,
-							this.app,
-							() => enabledIdToHotkeys.get(cmd.id)?.slice()
-						);
+						const command =
+							CommandMetaDelegateOrImplementor.newCommandInstance(
+								cmd,
+								this.app,
+								() => enabledIdToHotkeys.get(cmd.id)?.slice()
+							);
 						if (command) {
 							this.plugin.removeCommand(cmd.id);
 							this.plugin.addCommand(command);

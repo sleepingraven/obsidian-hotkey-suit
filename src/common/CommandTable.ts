@@ -6,8 +6,8 @@
  * @FilePath     \hotkey-suit\src\common\CommandTable.ts
  * @Description  这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import { App, Command, Hotkey } from "obsidian";
-import { Constants } from "src/common/Constants";
+import { App, Command, EditorSelection, Hotkey, Notice } from "obsidian";
+import { Constants, ENV_VAR } from "src/common/Constants";
 import { CommandsDummy } from "src/common/CommandsUtil";
 
 /* CommandMeta */
@@ -15,51 +15,59 @@ import { CommandsDummy } from "src/common/CommandsUtil";
 /**
  * @see Command
  */
-export type CommandMeta = CommandMetaEmpty | CommandMetaDelegate;
+export type CommandMeta = CommandMetaEmpty | CommandMetaDelegateOrImplementor;
 export class CommandMetaEmpty {
 	name: string;
 }
-export class CommandMetaDelegate {
+export class CommandMetaDelegateOrImplementor {
 	name: string;
 	id: string;
 	_hks: Readonly<Hotkey[]>;
 
 	static newCommandInstance(
-		cmd: CommandMetaDelegate,
+		cmd: CommandMetaDelegateOrImplementor,
 		app: App,
 		hotkeysSupplier: () => Hotkey[] | undefined = () => undefined
 	): Command | undefined {
-		const commands = CommandsDummy.getCommandsInstance(app);
-		const command = commands.findCommand(cmd.id);
-		if (!command) {
-			console.error(
-				`${Constants.BASE_NAME}: Command not found: ${cmd.id}`
-			);
-			return;
+		let command;
+
+		const asCommand = cmd as Command;
+		if (asCommand.editorCheckCallback) {
+			command = { ...asCommand };
+		} else {
+			const commands = CommandsDummy.getCommandsInstance(app);
+			const targetCommand = commands.findCommand(cmd.id);
+			if (!targetCommand) {
+				console.error(
+					`${Constants.BASE_NAME}: Command not found: ${cmd.id}`
+				);
+				return;
+			}
+
+			cmd = { ...cmd } as CommandMetaDelegateOrImplementor;
+			command = new Proxy(targetCommand, {
+				get(target, p, receiver) {
+					if (p in cmd) {
+						return cmd[p as keyof CommandMetaDelegateOrImplementor];
+					} else {
+						return Reflect.get(target, p, receiver);
+					}
+				},
+				set(_target, p, newValue, _receiver) {
+					cmd[p as keyof CommandMetaDelegateOrImplementor] = newValue;
+					if (!(p in cmd)) {
+						console.error(`${Constants.BASE_NAME}: p isn't in cmd`);
+						console.log(targetCommand);
+						console.log(cmd);
+						console.log(p);
+					}
+					return true;
+				},
+			});
 		}
 
-		cmd = { ...cmd } as CommandMetaDelegate;
-		const proxy = new Proxy(command, {
-			get(target, p, receiver) {
-				if (p in cmd) {
-					return cmd[p as keyof CommandMetaDelegate];
-				} else {
-					return Reflect.get(target, p, receiver);
-				}
-			},
-			set(_target, p, newValue, _receiver) {
-				cmd[p as keyof CommandMetaDelegate] = newValue;
-				if (!(p in cmd)) {
-					console.error(`${Constants.BASE_NAME}: p isn't in cmd`);
-					console.log(command);
-					console.log(cmd);
-					console.log(p);
-				}
-				return true;
-			},
-		});
-		proxy.hotkeys = hotkeysSupplier();
-		return proxy;
+		command.hotkeys = hotkeysSupplier();
+		return command;
 	}
 }
 
@@ -113,7 +121,7 @@ function paragraphCommands(): CommandMeta[] {
 						key: `${i}`,
 					},
 				] as Readonly<Hotkey[]>,
-			} as CommandMetaDelegate;
+			} as CommandMetaDelegateOrImplementor;
 		}),
 		{
 			name: `Paragraph`,
@@ -273,7 +281,97 @@ function tableCommands(): CommandMeta[] {
 
 function formatCommands(): CommandMeta[] {
 	return [
-		{ name: `Underline` },
+		{
+			name: `Underline`,
+			id: `editor:toggle-underline`,
+			_hks: [
+				{
+					modifiers: ["Mod"],
+					key: `U`,
+				},
+			],
+			editorCheckCallback(checking, editor) {
+				const applyToLine = (selection: EditorSelection) => {
+					const tagStart = "<u>";
+					const tagEnd = "</u>";
+
+					const { anchor, head } = selection;
+					const [positionStart, positionEnd] =
+						anchor.ch <= head.ch ? [anchor, head] : [head, anchor];
+
+					const lineNum = positionStart.line;
+					const line = editor.getLine(lineNum);
+					const startMatch = /(.*)<u>/.exec(
+						line.substring(0, positionStart.ch + tagStart.length)
+					);
+					const endMatch = /<\/u>/.exec(
+						line.substring(positionEnd.ch - tagEnd.length)
+					);
+
+					const startFromIdx = startMatch ? startMatch[1].length : -1;
+					const endToIdx = endMatch
+						? positionEnd.ch + endMatch.index
+						: -1;
+					ENV_VAR.logDevMessages(() => [
+						`Underline: startMatch = ${startMatch}`,
+						`Underline: endMatch = ${endMatch}`,
+						`Underline: endToIdx = ${endToIdx}`,
+						`Underline: startFromIdx = ${startFromIdx}`,
+					]);
+					if (startMatch && endMatch) {
+						const untaggedSubstring = line.substring(
+							startFromIdx + tagStart.length,
+							endToIdx - tagEnd.length
+						);
+						editor.replaceRange(
+							untaggedSubstring,
+							{
+								line: lineNum,
+								ch: startFromIdx,
+							},
+							{
+								line: lineNum,
+								ch: endToIdx,
+							}
+						);
+					} else {
+						if (positionStart.ch === positionEnd.ch) {
+							editor.replaceRange(
+								tagStart + line + tagEnd,
+								{ line: lineNum, ch: 0 },
+								{ line: lineNum, ch: line.length }
+							);
+						} else {
+							editor.replaceRange(
+								tagStart +
+									line.substring(
+										positionStart.ch,
+										positionEnd.ch
+									) +
+									tagEnd,
+								positionStart,
+								positionEnd
+							);
+						}
+					}
+				};
+
+				const selections = editor.listSelections();
+				if (selections.some((s) => s.anchor.line !== s.head.line)) {
+					if (!checking) {
+						new Notice(
+							`${Constants.BASE_DISPLAY_TEXT_CAP}: Unable to underline multiple lines.`
+						);
+					}
+					return false;
+				}
+
+				if (!checking) {
+					selections.forEach(applyToLine);
+				}
+				return true;
+			},
+		} as Command,
 		{
 			name: `Code`,
 			id: `editor:toggle-code`,

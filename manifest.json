@@ -1,7 +1,7 @@
 {
 	"id": "hotkey-suit",
 	"name": "Hotkey suit",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"minAppVersion": "1.8.4",
 	"description": "Enable a set of shortcuts simply.",
 	"author": "sleepingraven",
