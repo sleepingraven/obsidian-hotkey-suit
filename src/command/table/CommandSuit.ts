@@ -3,93 +3,47 @@
  * @Date         2025-01-25 17:22:25
  * @LastEditors  sleepingraven
  * @LastEditTime 2025-01-31 18:43:48
- * @FilePath     \hotkey-suit\src\common\CommandTable.ts
+ * @FilePath     \hotkey-suit\src\command\table\CommandSuit.ts
  * @Description  这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import { App, Command, EditorSelection, Hotkey, Notice } from "obsidian";
+import { Command, EditorSelection, Notice } from "obsidian";
+import { DeepReadonly } from "ts-essentials";
 import { Constants, ENV_VAR } from "src/common/Constants";
-import { CommandsDummy } from "src/common/CommandsUtil";
+import { Consumer } from "src/common/ObjUtil";
+import {
+	CommandMeta,
+	CommandMetaDelegateOrImplementor,
+	flagsOfImplementations,
+} from "src/command/table/CommandMeta";
 
-/* CommandMeta */
-
-/**
- * @see Command
- */
-export type CommandMeta = CommandMetaEmpty | CommandMetaDelegateOrImplementor;
-export class CommandMetaEmpty {
-	name: string;
-}
-export class CommandMetaDelegateOrImplementor {
-	name: string;
-	id: string;
-	_hks: Readonly<Hotkey[]>;
-
-	static newCommandInstance(
-		cmd: CommandMetaDelegateOrImplementor,
-		app: App,
-		hotkeysSupplier: () => Hotkey[] | undefined = () => undefined
-	): Command | undefined {
-		let command;
-
-		const asCommand = cmd as Command;
-		if (asCommand.editorCheckCallback) {
-			command = { ...asCommand };
-		} else {
-			const commands = CommandsDummy.getCommandsInstance(app);
-			const targetCommand = commands.findCommand(cmd.id);
-			if (!targetCommand) {
-				console.error(
-					`${Constants.BASE_NAME}: Command not found: ${cmd.id}`
-				);
-				return;
-			}
-
-			cmd = { ...cmd } as CommandMetaDelegateOrImplementor;
-			command = new Proxy(targetCommand, {
-				get(target, p, receiver) {
-					if (p in cmd) {
-						return cmd[p as keyof CommandMetaDelegateOrImplementor];
-					} else {
-						return Reflect.get(target, p, receiver);
-					}
-				},
-				set(_target, p, newValue, _receiver) {
-					cmd[p as keyof CommandMetaDelegateOrImplementor] = newValue;
-					if (!(p in cmd)) {
-						console.error(`${Constants.BASE_NAME}: p isn't in cmd`);
-						console.log(targetCommand);
-						console.log(cmd);
-						console.log(p);
-					}
-					return true;
-				},
-			});
-		}
-
-		command.hotkeys = hotkeysSupplier();
-		return command;
-	}
-}
-
-/* RootCommandNode */
-
-export type CommandNode = {
+interface InternalCommandNode {
 	title?: string;
-	children?: CommandNode[];
+	children?: InternalCommandNode[];
 	commands?: CommandMeta[];
-};
+}
+export type CommandNode = DeepReadonly<InternalCommandNode>;
+
+export function iterateCommandTree(
+	root: CommandNode,
+	consumer: Consumer<CommandNode>
+) {
+	const doIterateCommandTree = (p: CommandNode) => {
+		consumer(p);
+		p.children?.forEach(doIterateCommandTree);
+	};
+	root.children?.forEach(doIterateCommandTree);
+}
 
 export function instantiateRootCommandNode(): CommandNode {
-	const root: CommandNode = {};
-	root.children = [
-		{ title: "Edit", commands: editCommands() },
-		{ title: "Paragraph", commands: paragraphCommands() },
-		{ title: "Table", commands: tableCommands() },
-		{ title: "Format", commands: formatCommands() },
-		{ title: "View", commands: viewCommands() },
-	];
-
-	return root;
+	return {
+		children: [
+			{ title: "Edit", commands: editCommands() },
+			{ title: "Paragraph", commands: paragraphCommands() },
+			{ title: "Table", commands: tableCommands() },
+			{ title: "Format", commands: formatCommands() },
+			{ title: "View", commands: viewCommands() },
+		],
+	};
 }
 
 function editCommands(): CommandMeta[] {
@@ -111,18 +65,16 @@ function paragraphCommands(): CommandMeta[] {
 		...Array.from(
 			{ length: Constants.MAX_HEADING_LEVEL as number },
 			(_, i) => i + 1
-		).map((i) => {
-			return {
-				name: `Heading ${i}`,
-				id: `editor:set-heading-${i}`,
-				_hks: [
-					{
-						modifiers: ["Mod"],
-						key: `${i}`,
-					},
-				] as Readonly<Hotkey[]>,
-			} as CommandMetaDelegateOrImplementor;
-		}),
+		).map<CommandMetaDelegateOrImplementor>((i) => ({
+			name: `Heading ${i}`,
+			id: `editor:set-heading-${i}`,
+			_hks: [
+				{
+					modifiers: ["Mod"],
+					key: i.toString(),
+				},
+			],
+		})),
 		{
 			name: `Paragraph`,
 			id: `editor:set-heading-0`,
@@ -133,8 +85,14 @@ function paragraphCommands(): CommandMeta[] {
 				},
 			],
 		},
-		{ name: `Increase heading level` },
-		{ name: `Decrease heading level` },
+		{
+			name: `Increase heading level`,
+			_flags: flagsOfImplementations("ByAnotherPlugin"),
+		},
+		{
+			name: `Decrease heading level`,
+			_flags: flagsOfImplementations("ByAnotherPlugin"),
+		},
 		{
 			name: `Math block`,
 			id: `editor:insert-mathblock`,
@@ -290,6 +248,7 @@ function formatCommands(): CommandMeta[] {
 					key: `U`,
 				},
 			],
+			_flags: flagsOfImplementations("Implemented", "ByAnotherPlugin"),
 			editorCheckCallback(checking, editor) {
 				const applyToLine = (selection: EditorSelection) => {
 					const tagStart = "<u>";
@@ -312,7 +271,7 @@ function formatCommands(): CommandMeta[] {
 					const endToIdx = endMatch
 						? positionEnd.ch + endMatch.index
 						: -1;
-					ENV_VAR.logDevMessages(() => [
+					ENV_VAR.logDevMessage(() => [
 						`Underline: startMatch = ${startMatch}`,
 						`Underline: endMatch = ${endMatch}`,
 						`Underline: endToIdx = ${endToIdx}`,
@@ -393,7 +352,16 @@ function formatCommands(): CommandMeta[] {
 			],
 		},
 		{ name: `Image` },
-		{ name: `Clear format` },
+		{
+			name: `Clear format`,
+			id: `editor:clear-formatting`,
+			_hks: [
+				{
+					modifiers: ["Mod"],
+					key: `\\`,
+				},
+			],
+		},
 	] as CommandMeta[];
 }
 

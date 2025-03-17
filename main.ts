@@ -6,21 +6,25 @@
  * @FilePath     \hotkey-suit\main.ts
  * @Description  这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import { App, Editor, MarkdownView, Notice, Plugin, Hotkey } from "obsidian";
+import { Plugin } from "obsidian";
 import {
 	PluginSettings,
 	DEFAULT_SETTINGS,
 	SettingTab,
-} from "src/ui/SettingTab";
+} from "src/ui/setting/SettingTab";
+import { CommandMetas } from "src/command/table/CommandMeta";
 import {
 	CommandNode,
 	instantiateRootCommandNode,
-	CommandMetaDelegateOrImplementor,
-} from "src/common/CommandTable";
+	iterateCommandTree,
+} from "src/command/table/CommandSuit";
 
 export default class HotkeySuitPlugin extends Plugin {
-	settings: PluginSettings;
-	enabledIdToHotkeys: Map<string, Hotkey[]>;
+	private _settings: PluginSettings;
+
+	get settings() {
+		return this._settings;
+	}
 
 	async onload() {
 		await this.loadSettings();
@@ -32,45 +36,39 @@ export default class HotkeySuitPlugin extends Plugin {
 		this.addSettingTab(settingTab);
 	}
 
-	initCommandNodes(root: CommandNode) {
-		const doInitCommandNodes = (p: CommandNode) => {
+	private initCommandNodes(root: CommandNode) {
+		iterateCommandTree(root, (p) => {
 			p.commands?.forEach((cm) => {
-				const cmd = cm as CommandMetaDelegateOrImplementor;
-				if (cmd.id && cmd._hks) {
-					const command =
-						CommandMetaDelegateOrImplementor.newCommandInstance(
-							cmd,
+				if (CommandMetas.requireSupported(cm)) {
+					const addCommand =
+						this._settings.delegateCoreCommands ||
+						!CommandMetas.isDelegate(cm);
+					if (addCommand) {
+						const command = CommandMetas.newCommandInstance(
 							this.app,
-							() => this.enabledIdToHotkeys.get(cmd.id)?.slice()
+							cm,
+							this._settings.selectedHotkeys[cm.id]
 						);
-					if (command) {
-						this.addCommand(command);
+						if (command) {
+							this.addCommand(command);
+						}
 					}
 				}
 			});
-
-			p.children?.forEach(doInitCommandNodes.bind(this));
-		};
-
-		root.children?.forEach(doInitCommandNodes.bind(this));
+		});
 	}
 
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign(
+		this._settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
-		this.enabledIdToHotkeys = new Map<string, Hotkey[]>(
-			this.settings.enabledIdToHotkeysEntries
-		);
 	}
 
 	async saveSettings() {
-		const mapArray = Array.from(this.enabledIdToHotkeys.entries());
-		this.settings.enabledIdToHotkeysEntries = Array.from(mapArray);
-		await this.saveData(this.settings);
+		await this.saveData(this._settings);
 	}
 }

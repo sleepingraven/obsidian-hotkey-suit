@@ -7,30 +7,30 @@
  * @Description  这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 import { Platform } from "obsidian";
+import { ReadonlyArrayOrSingle } from "ts-essentials";
+import { castReadonlyArray, Supplier } from "src/common/ObjUtil";
 
-export enum Constants {
+export const enum Constants {
 	BASE_NAME = "hotkey-suit",
 	BASE_DISPLAY_TEXT_CAP = "Hotkey suit",
 
 	MAX_HEADING_LEVEL = 6,
 
-	DISPLAY_NOT_SUPPORTED = 0,
 	STRIKETHROUGH_NOT_SUPPORTED = 0,
+
+	SETTING_CONTAINER_CLS = `${BASE_NAME}-setting-container`,
+	BADGE_BACKDROP_CLS = `${BASE_NAME}-badge-backdrop`,
+	DISPLAY_NONE_CLS = `${BASE_NAME}-display-none`,
 }
 
 export const ENV_VAR = {
 	DEV_MODE: false,
 
-	logDevMessage(msgSupplier: () => string) {
+	logDevMessage(msgSupplier: Supplier<ReadonlyArrayOrSingle<string>>) {
 		if ((this as typeof ENV_VAR).DEV_MODE) {
-			console.log(`${Constants.BASE_NAME}: ${msgSupplier()}`);
-		}
-	},
-	logDevMessages(msgSupplier: () => string[]) {
-		if ((this as typeof ENV_VAR).DEV_MODE) {
-			msgSupplier().forEach((msg) => {
-				console.log(`${Constants.BASE_NAME}: ${msg}`);
-			});
+			castReadonlyArray(msgSupplier()).forEach((msg) =>
+				console.log(`${Constants.BASE_NAME}: ${msg}`)
+			);
 		}
 	},
 

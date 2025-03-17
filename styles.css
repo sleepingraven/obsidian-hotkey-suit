@@ -7,6 +7,45 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-.hotkey-suit-setting-container .setting-item:not(.setting-item-heading) .setting-item-name {
+.hotkey-suit-setting-container
+	.setting-item:not(.setting-item-heading)
+	.setting-item-name
+	> span:first-child {
 	user-select: text;
+}
+.hotkey-suit-setting-container
+	.setting-item-name:has(.setting-command-hotkeys) {
+	display: flex;
+}
+.hotkey-suit-setting-container .setting-item-name > .setting-command-hotkeys {
+	margin-inline-start: var(--size-4-2);
+}
+.hotkey-suit-setting-container
+	.setting-item-control
+	> .setting-command-hotkeys {
+	justify-content: flex-end;
+}
+.hotkey-suit-setting-container
+	.setting-hotkey.hotkey-suit-badge-backdrop:has(
+		+ .hotkey-suit-badge-backdrop
+	) {
+	padding-inline-end: 0;
+}
+
+.hotkey-suit-setting-container .hotkey-suit-display-none {
+	display: none;
+}
+.hotkey-suit-setting-container .setting-hotkey.hotkey-suit-badge-backdrop {
+	background-color: transparent;
+}
+.hotkey-suit-setting-container .hotkey-suit-modal-sticky {
+	position: sticky;
+	top: 0px;
+	bottom: 0px;
+	background-color: var(--modal-background);
+	/* cover clickable-icon */
+	/* z-index: 1; */
+}
+.hotkey-suit-setting-container .setting-item.hotkey-suit-setting-item-around {
+	padding: 0;
 }
