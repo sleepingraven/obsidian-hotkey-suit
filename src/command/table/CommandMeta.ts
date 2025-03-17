@@ -69,6 +69,7 @@ export abstract class CommandMetas {
 		cms: CommandMetaDelegateOrImplementor,
 		hotkeys?: DeepReadonly<Hotkey[]>
 	): Command {
+		// hardcoding
 		const { _flags, _hks, ...command } = cms;
 		if (hotkeys !== undefined) {
 			command.hotkeys = CommandMetas.cloneHotkeys(hotkeys);
@@ -84,9 +85,14 @@ export abstract class CommandMetas {
 	}
 }
 
-const requiredCmsKeys: Readonly<
+// hardcoding
+type RequiredCmsKeysType0 = Readonly<
 	UnionToTuple<RequiredKeys<CommandMetaDelegateOrImplementor>>
-> = ["_hks", "id", "name"] as const;
+>;
+type RequiredCmsKeysType = ReadonlyArray<
+	RequiredKeys<CommandMetaDelegateOrImplementor>
+>;
+const requiredCmsKeys: RequiredCmsKeysType = ["_hks", "id", "name"] as const;
 
 type CustomMetadata = DeepReadonly<{
 	_flags?: KeyFlags<ImplementationType>;

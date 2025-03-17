@@ -8,26 +8,35 @@
 -->
 # Hotkey Suit
 
-This plugin lists a set of shortcuts from [Typora](https://support.typora.io/Shortcut-Keys/), which can be enabled in *setting tab*.
+This plugin lists a set of shortcuts from [Typora](https://support.typora.io/Shortcut-Keys/).
 
 ## Usage
 
+### 1. Choose hotkeys
+
 1. Select **Settings → Community plugins → Hotkey suit**.
-   - Choose a Hotkey suit command to enable.
-   ![Plugin setting](assets/plugin-setting.png)
-2. Select **Settings → Options → Hotkeys**.
-   - Select **(<img src="assets/filter.svg" alt="filter.svg" style="height: 1em; vertical-align: middle">) → Assigned**, or search by command name or hotkey.
-   ![Hotkeys setting](assets/hotkeys-setting.png)
-   - You can see and disable conflicting hotkeys that in *error* color.
-   ![Conflicting hotkeys](assets/conflicting-hotkeys.png)
+2. Choose preferred hotkeys to enable.
 
-## Limitation
+![Plugin setting tab](assets/plugin-setting-tab.png)
 
-1. Since there is not an exposed interface to open **Settings → Options → Hotkeys**, you need to select manually.
-2. You may not disable a Hotkey suit command (name in the form of "Hotkey suit: …") under **Settings → Options → Hotkeys** because there is not an associated event to disable plugin's setting.
-    If you did, you can select **(<img src="assets/filter.svg" alt="filter.svg" style="height: 1em; vertical-align: middle">) → Assigned by me** or search by name to find that command and restore default.
+### 2. Config core commands
 
-## installation
+This plugin allows wrap commands from Obsidian core, or set hotkeys directly.
+
+- **Wrap core commands** creates new corresponding commands with enabled hotkeys as default.
+- Next to **Wrap core commands**, select **Examine (<img src="assets/list-tree.svg" alt="examine button" style="height: 1em; vertical-align: middle">)** to assign enabled hotkeys or restore default directly.
+
+![Examine](assets/examine.png)
+
+### 3. Resolve hotkey conflicts
+
+1. Select **Settings → Options → Hotkeys**.
+2. Select **(<img src="assets/filter.svg" alt="filter button" style="height: 1em; vertical-align: middle">) → Assigned**, or search by command name or hotkey.
+3. Conflicting hotkeys are in *error* color.
+
+![Hotkeys setting tab](assets/hotkeys-setting-tab.png)
+
+## Installation
 
 ### [Install from community plugins](https://help.obsidian.md/Extending+Obsidian/Community+plugins#Install+a+community+plugin)
 

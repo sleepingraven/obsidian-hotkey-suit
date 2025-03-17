@@ -21,20 +21,18 @@ import {
 	CandidateAssignments,
 } from "src/ui/setting/examine/Assignment";
 
+type CallbackFns = {
+	assignmentChanged: (
+		id: string,
+		to: AssignmentType,
+		from?: AssignmentType
+	) => void;
+};
 export class SettingItemRenderer {
 	private readonly plugin: HotkeySuitPlugin;
-	private readonly callbackFns: {
-		assignmentChanged: (
-			id: string,
-			to: AssignmentType,
-			from?: AssignmentType
-		) => void;
-	};
+	private readonly callbackFns: CallbackFns;
 
-	constructor(
-		plugin: HotkeySuitPlugin,
-		callbackFns: typeof this.callbackFns
-	) {
+	constructor(plugin: HotkeySuitPlugin, callbackFns: CallbackFns) {
 		this.plugin = plugin;
 		this.callbackFns = callbackFns;
 	}
@@ -114,25 +112,13 @@ export class SettingItemRenderer {
 		badges: Badges,
 		from: boolean
 	) {
-		if (hotkeys.length) {
-			hotkeys
-				.map((hk) =>
-					HotkeysRenderer.textOfHotkey(
-						hk,
-						this.plugin.settings.symbolizeKeys
-					)
-				)
-				.forEach((text) => this.renderHotkeyText(text, badges, from));
-		} else {
-			this.renderHotkeyText("Blank", badges, from);
-		}
-	}
-	private renderHotkeyText(text: string, badges: Badges, from: boolean) {
-		badges.renderBadge(text, {
-			tooltipParams: {
-				tooltip: `${from ? "Current" : "Suit"} hotkey`,
-			},
-		});
+		HotkeysRenderer.hotkeysTexts(hotkeys).forEach((text) =>
+			badges.renderBadge(text, {
+				tooltipParams: {
+					tooltip: `${from ? "Current" : "Suit"} hotkey`,
+				},
+			})
+		);
 	}
 }
 

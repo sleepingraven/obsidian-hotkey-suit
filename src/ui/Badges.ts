@@ -7,7 +7,9 @@
  * @Description  这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 import { setTooltip, TooltipOptions } from "obsidian";
+import { ReadonlyArrayOrSingle } from "ts-essentials";
 import { Constants } from "src/common/Constants";
+import { castReadonlyArray } from "src/common/ObjUtil";
 
 export class Badges {
 	readonly containerEl: HTMLElement;
@@ -19,7 +21,7 @@ export class Badges {
 	renderBadge(
 		o: DomElementInfo | string,
 		options?: {
-			type?: BadgeTypeEnum;
+			type?: ReadonlyArrayOrSingle<BadgeTypeEnum>;
 			tooltipParams?: { tooltip: string; options?: TooltipOptions };
 		}
 	) {
@@ -37,8 +39,8 @@ export class Badges {
 
 		if (options) {
 			const { type, tooltipParams } = options;
-			if (type) {
-				el.addClass(type);
+			if (type !== undefined) {
+				el.addClass(...typeClasses(castReadonlyArray(type)));
 			}
 			if (tooltipParams) {
 				setTooltip(el, tooltipParams.tooltip, tooltipParams.options);
@@ -49,5 +51,17 @@ export class Badges {
 
 export const enum BadgeTypeEnum {
 	Default,
-	Backdrop = Constants.BADGE_BACKDROP_CLS,
+	Backdrop,
 }
+const typeClasses = (() => {
+	type ExcludeDefault = Exclude<BadgeTypeEnum, BadgeTypeEnum.Default>;
+	const typeClass: Readonly<Record<ExcludeDefault, string>> = {
+		[BadgeTypeEnum.Backdrop]: Constants.BADGE_BACKDROP_CLS,
+	};
+	return (types: ReadonlyArray<BadgeTypeEnum>) =>
+		types
+			.filter(
+				(type): type is ExcludeDefault => type !== BadgeTypeEnum.Default
+			)
+			.map((type) => typeClass[type]);
+})();

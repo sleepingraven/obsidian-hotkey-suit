@@ -162,7 +162,7 @@ export class ExamineModal extends Modal {
 				btn
 					.setButtonText("Assign / Restore")
 					.setCta()
-					.onClick(() => {
+					.onClick(async () => {
 						const commandCnts: Readonly<
 							Record<keyof typeof assignmentStateText, number>
 						> = RecordUtil.newRecord(
@@ -192,6 +192,7 @@ export class ExamineModal extends Modal {
 						this.helper.assignmentToIds["Restore"].forEach(
 							(_, id) => hotkeyManager.removeHotkeys(id)
 						);
+						await hotkeyManager.save();
 
 						new Notice(
 							createFragment((doc) => {
@@ -216,24 +217,6 @@ export class ExamineModal extends Modal {
 										doc.createEl("br");
 									}
 								});
-								doc.createEl("br");
-								doc.createEl("br");
-
-								doc.createSpan({
-									text: "Don't forget to save changes at ",
-								});
-								doc.createEl("strong", {
-									text: "Save hotkeys",
-								});
-								doc.createSpan({ text: " button." });
-								doc.createEl("br");
-								doc.createSpan({
-									text: "It's auto saved if a change is made under ",
-								});
-								doc.createEl("strong", {
-									text: "Settings → Options → Hotkeys",
-								});
-								doc.createSpan({ text: "." });
 							}),
 							0
 						);

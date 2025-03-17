@@ -10,18 +10,19 @@ import { Platform } from "obsidian";
 import { ReadonlyArrayOrSingle } from "ts-essentials";
 import { castReadonlyArray, Supplier } from "src/common/ObjUtil";
 
-export const enum Constants {
-	BASE_NAME = "hotkey-suit",
-	BASE_DISPLAY_TEXT_CAP = "Hotkey suit",
+const BASE_NAME = "hotkey-suit";
+export const Constants = {
+	BASE_NAME: BASE_NAME,
+	BASE_DISPLAY_TEXT_CAP: "Hotkey suit",
 
-	MAX_HEADING_LEVEL = 6,
+	MAX_HEADING_LEVEL: 6,
 
-	STRIKETHROUGH_NOT_SUPPORTED = 0,
+	STRIKETHROUGH_NOT_SUPPORTED: false,
 
-	SETTING_CONTAINER_CLS = `${BASE_NAME}-setting-container`,
-	BADGE_BACKDROP_CLS = `${BASE_NAME}-badge-backdrop`,
-	DISPLAY_NONE_CLS = `${BASE_NAME}-display-none`,
-}
+	SETTING_CONTAINER_CLS: `${BASE_NAME}-setting-container`,
+	BADGE_BACKDROP_CLS: `${BASE_NAME}-badge-backdrop`,
+	DISPLAY_NONE_CLS: `${BASE_NAME}-display-none`,
+} as const;
 
 export const ENV_VAR = {
 	DEV_MODE: false,

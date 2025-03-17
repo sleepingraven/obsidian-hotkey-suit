@@ -95,6 +95,17 @@ export abstract class HotkeysRenderer {
 		});
 	}
 
+	static hotkeysTexts(
+		hotkeys: DeepReadonly<Hotkey[]>,
+		useSymbolicKeys = false
+	) {
+		return hotkeys.length
+			? hotkeys.map((hk) =>
+					HotkeysRenderer.textOfHotkey(hk, useSymbolicKeys)
+			  )
+			: ["Blank"];
+	}
+
 	static textOfHotkey(hotkey: DeepReadonly<Hotkey>, useSymbolicKeys = false) {
 		return hotkey.modifiers
 			.map((m) => modifierFilter.get(useSymbolicKeys)[m] ?? m)

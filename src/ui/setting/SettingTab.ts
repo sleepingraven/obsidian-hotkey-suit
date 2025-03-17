@@ -146,18 +146,6 @@ export class SettingTab extends PluginSettingTab {
 					});
 				})
 			)
-			/*
-			.addExtraButton((btn) => {
-				btn.setIcon("check-check")
-					.setTooltip("Save hotkeys")
-					.onClick(async () => {
-						const hotkeyManager = HotkeyManagerDummy.getInstance(
-							this.app
-						);
-						await hotkeyManager.save();
-					});
-			})
-			*/
 			.addExtraButton((btn) => {
 				btn.setIcon("list-tree")
 					.setTooltip("Examine")
@@ -234,6 +222,23 @@ export class SettingTab extends PluginSettingTab {
 								doc,
 								this.plugin.settings.symbolizeKeys
 							);
+
+							const hotkeyManager =
+								HotkeyManagerDummy.getInstance(this.app);
+							const prefixedId = `${this.plugin.manifest.id}:${cm.id}`;
+							const hotkeys =
+								hotkeyManager.getHotkeys(prefixedId);
+							if (hotkeys !== undefined) {
+								const badges = new Badges(setting.controlEl);
+								HotkeysRenderer.hotkeysTexts(hotkeys).forEach(
+									(text) =>
+										badges.renderBadge(text, {
+											tooltipParams: {
+												tooltip: "Assigned by me",
+											},
+										})
+								);
+							}
 						})
 					)
 					.addToggle((toggle) => {

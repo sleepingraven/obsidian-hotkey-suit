@@ -81,7 +81,7 @@ export abstract class ObjUtil {
 	}
 
 	static merge<T, U>(obj1: T, obj2: U) {
-		return { ...obj1, ...obj2 } as Merge<T, U>;
+		return { ...obj1, ...obj2 } as unknown as Merge<T, U>;
 	}
 	static mergeAll = <Tuple extends Record<string, unknown>[]>(
 		...args: [...Tuple]
@@ -112,7 +112,7 @@ export abstract class ObjUtil {
 				(value && typeof value === "object") ||
 				typeof value === "function"
 			) {
-				ObjUtil.deepFreeze(value);
+				ObjUtil.deepFreeze(value as unknown as object);
 			}
 		}
 		return Object.freeze(obj) as DeepReadonly<Type>;
