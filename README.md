@@ -38,7 +38,7 @@ This plugin allows wrap commands from Obsidian core, or set hotkeys directly.
 
 ## Installation
 
-### [Install from community plugins](https://help.obsidian.md/Extending+Obsidian/Community+plugins#Install+a+community+plugin)
+<!-- ### [Install from community plugins](https://help.obsidian.md/Extending+Obsidian/Community+plugins#Install+a+community+plugin) -->
 
 ### Install manually
 
